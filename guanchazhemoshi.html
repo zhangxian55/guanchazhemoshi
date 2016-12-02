@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title></title>
+</head>
+<body>
+<script type="text/javascript">
+// 定义观察者模式
+// 通常来说消息管道是不希望让人们看到，我们通常放在闭包里
+var Observer = (function () {
+	// 定义消息管道，存储消息，放在闭包里，防止外界访问
+	var __message = {};
+	// 将订阅事件，发布事件，删除事件的方法，我们暴漏给用户
+	// 通过return将接口暴漏
+	return {
+		/**
+		 * 订阅消息的方法
+		 * @type 	消息名称
+		 * @fn 		消息的回调函数
+		 **/
+		on: function (type, fn) {
+			// 将消息注册到消息管道里，保存
+			// 消息管道中存在该消息
+			if (__message[type]) {
+				// 向消息系统中push进该回调函数
+				__message[type].push(fn);
+			} else {
+				// 消息管道中不存在消息
+				// 创建数组，存储消息
+				__message[type] = [fn]
+			}
+		},
+		/**
+		 * 发布消息方法
+		 * @type 	发布消息的类型
+		 * @obj 	自定义的数据
+		 **/
+		trigger: function (type, obj) {
+			// 解析数据，封装一下
+			var Options = {
+				// 表示回到函数执行作用域
+				context: obj.context || null,
+				// 消息数据对象
+				ev: {
+					// 将消息类型返回
+					type: type,
+					// 将自定义的数据返回
+					data: obj.data || null
+				}
+			};
+			// 获取回调函数，根据type获取
+			var fns = __message[type];
+			// 遍历这些回调函数并执行
+			for (var i = 0; i < fns.length; i++) {
+				fns[i].call(Options.context, Options.ev)
+			}
+		},
+		/**
+		 * 删除订阅的消息方法
+		 * @type 	表示消息的类型
+		 * @fn 		删除订阅方法
+		 **/
+		off: function (type, fn) {
+			// 获取该类型的所有消息
+			// 逐一比对，哪个方法等于fn，我们就删除谁
+			for (var i = __message[type].length; i >= 0; i--) {
+				if (fn === __message[type][i]) {
+					// 如果是这个fn，我们就要在数组中删除
+					__message[type].splice(i, 1)
+				}
+			}
+			// 在数组中删除这个fn，splice
+
+		} 
+	}
+})();
+
+// 测试
+// 定义一个模块
+(function () {
+	function demo (e) {
+		console.log(e)
+		console.log(this.color)
+	}
+	Observer.on('ickt', demo)
+	// 如果想删除demo
+	Observer.off('ickt', demo)
+})();
+// 定义另外一个模块
+(function () {
+	// 定义数据
+	var obj = {
+		title: '爱创课堂'
+	};
+	var obj2 = {
+		color: 'red'
+	}
+	// 通过观察者模式实现模块间数据的传递
+	Observer.trigger('ickt', {
+		data: obj,
+		context: obj2
+	})
+})()
+</script>
+</body>
+</html>
